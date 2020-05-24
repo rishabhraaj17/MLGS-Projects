@@ -7,6 +7,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 from sklearn.datasets import make_moons
 
+
 # Base class for normalizing flows
 class Flow(nn.Module):
     """Base class for transforms with learnable parameters.
@@ -26,6 +27,7 @@ class Flow(nn.Module):
     def get_inverse(self):
         """Get inverse transformation."""
         return InverseFlow(self)
+
 
 class InverseFlow(Flow):
     """Class which inverse the parametrization of a flow.
@@ -70,6 +72,7 @@ class InverseFlow(Flow):
         x, inv_log_det_jac = self.base_flow.forward(y)
         return x, inv_log_det_jac
 
+
 # Datasets
 class CircleGaussiansDataset(Dataset):
     def __init__(self, n_gaussians=6, n_samples=100, radius=3., variance=.3, seed=0):
@@ -86,16 +89,17 @@ class CircleGaussiansDataset(Dataset):
         self.n_samples = n_samples
         self.radius = radius
         self.variance = variance
-        
+
         np.random.seed(seed)
-        radial_pos = np.linspace(0, np.pi*2, num=n_gaussians, endpoint=False)
+        radial_pos = np.linspace(0, np.pi * 2, num=n_gaussians, endpoint=False)
         mean_pos = radius * np.column_stack((np.sin(radial_pos), np.cos(radial_pos)))
         samples = []
         for ix, mean in enumerate(mean_pos):
-            sampled_points = mean[:,None] + (np.random.normal(loc=0, scale=variance, size=n_samples), np.random.normal(loc=0, scale=variance, size=n_samples ))
+            sampled_points = mean[:, None] + (np.random.normal(loc=0, scale=variance, size=n_samples),
+                                              np.random.normal(loc=0, scale=variance, size=n_samples))
             samples.append(sampled_points)
         p = np.random.permutation(self.n_gaussians * self.n_samples)
-        self.X = np.transpose(samples, (0, 2, 1)).reshape([-1,2])[p]
+        self.X = np.transpose(samples, (0, 2, 1)).reshape([-1, 2])[p]
 
     def __len__(self):
         return self.n_gaussians * self.n_samples
@@ -103,7 +107,8 @@ class CircleGaussiansDataset(Dataset):
     def __getitem__(self, item):
         x = torch.from_numpy(self.X[item]).type(torch.FloatTensor)
         return x
-    
+
+
 class MoonsDataset(Dataset):
     def __init__(self, n_samples=1200, seed=0):
         """Create a 2D dataset with spirals.
@@ -123,7 +128,8 @@ class MoonsDataset(Dataset):
     def __getitem__(self, item):
         x = torch.from_numpy(self.X[item]).type(torch.FloatTensor)
         return x
-    
+
+
 class SpiralDataset(Dataset):
     def __init__(self, n_spirals=2, n_samples=600, seed=0):
         """Create a 2D dataset with spirals.
@@ -135,9 +141,9 @@ class SpiralDataset(Dataset):
         """
         self.n_spirals = n_spirals
         self.n_samples = n_samples
-        
+
         np.random.seed(seed)
-        radial_pos = np.linspace(0, np.pi*2, num=n_spirals, endpoint=False)
+        radial_pos = np.linspace(0, np.pi * 2, num=n_spirals, endpoint=False)
         samples = []
         for ix, radius in enumerate(radial_pos):
             n = np.sqrt(np.random.rand(n_samples, 1)) * 540 * (2 * np.pi) / 360
@@ -146,7 +152,7 @@ class SpiralDataset(Dataset):
             x = np.vstack((np.hstack((d1x, d1y)), np.hstack((-d1x, -d1y)))) / 3
             x += np.random.randn(*x.shape) * 0.01
             samples.append(x)
-            
+
         p = np.random.permutation(self.n_spirals * self.n_samples)
         self.X = np.concatenate(samples, axis=0)[p]
 
@@ -156,6 +162,7 @@ class SpiralDataset(Dataset):
     def __getitem__(self, item):
         x = torch.from_numpy(self.X[item]).type(torch.FloatTensor)
         return x
+
 
 # Visualization functions
 def plot_density(model, loader=[], batch_size=100, mesh_size=5., device="cpu"):
@@ -168,20 +175,22 @@ def plot_density(model, loader=[], batch_size=100, mesh_size=5., device="cpu"):
         mesh_size: range for the 2D mesh. float
     """
     with torch.no_grad():
-        xx, yy = np.meshgrid(np.linspace(- mesh_size, mesh_size, num=batch_size), np.linspace(- mesh_size, mesh_size, num=batch_size))
+        xx, yy = np.meshgrid(np.linspace(- mesh_size, mesh_size, num=batch_size),
+                             np.linspace(- mesh_size, mesh_size, num=batch_size))
         coords = np.stack((xx, yy), axis=2)
         coords_resh = coords.reshape([-1, 2])
-        log_prob = np.zeros((batch_size**2))
-        for i in range(0, batch_size**2, batch_size):
-            data = torch.from_numpy(coords_resh[i:i+batch_size, :]).float().to(device)
-            log_prob[i:i+batch_size] = model.log_prob(data.to(device)).cpu().detach().numpy()
+        log_prob = np.zeros((batch_size ** 2))
+        for i in range(0, batch_size ** 2, batch_size):
+            data = torch.from_numpy(coords_resh[i:i + batch_size, :]).float().to(device)
+            log_prob[i:i + batch_size] = model.log_prob(data.to(device)).cpu().detach().numpy()
 
-        plt.scatter(coords_resh[:,0], coords_resh[:,1], c=np.exp(log_prob))
+        plt.scatter(coords_resh[:, 0], coords_resh[:, 1], c=np.exp(log_prob))
         plt.colorbar()
         for X in loader:
-            plt.scatter(X[:,0], X[:,1], marker='x', c='orange', alpha=.05)
+            plt.scatter(X[:, 0], X[:, 1], marker='x', c='orange', alpha=.05)
 
         plt.show()
+
 
 def plot_samples(model, num_samples=500, mesh_size=5.):
     """Plot samples from a normalizing flow model. Colors are selected according to the densities at the samples.
@@ -194,7 +203,7 @@ def plot_samples(model, num_samples=500, mesh_size=5.):
     x, log_prob = model.rsample(batch_size=num_samples)
     x = x.cpu().detach().numpy()
     log_prob = log_prob.cpu().detach().numpy()
-    plt.scatter(x[:,0], x[:,1], c=np.exp(log_prob))
+    plt.scatter(x[:, 0], x[:, 1], c=np.exp(log_prob))
     plt.xlim(-mesh_size, mesh_size)
     plt.ylim(-mesh_size, mesh_size)
     plt.show()
