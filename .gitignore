@@ -164,3 +164,6 @@ dmypy.json
 cython_debug/
 
 Project1/data/
+Project2/.DS_Store
+Project2/data/
+Project2/models/

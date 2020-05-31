@@ -34,7 +34,24 @@ def fast_gradient_attack(logits: torch.Tensor, x: torch.Tensor, y: torch.Tensor,
 
     ##########################################################
     # YOUR CODE HERE
-    ...
+    loss = loss_fn(logits, y)
+    loss.backward()
+
+    x_grad = x.grad.data
+
+    # attack
+    sign_x_grad = x_grad.sign()
+
+    # perturbed l2 acc is very high
+    if norm == "1" or norm == "2":
+        x_pert = x + epsilon / torch.norm(x_grad, p=int(norm)) * x_grad
+        x_pert_norm = torch.norm((x_pert - x), p=int(norm))
+    else:
+        x_pert = x + epsilon * sign_x_grad
+        x_pert_norm = torch.norm((x_pert - x), p=float(norm))
+    print(f"x_pert_norm : {x_pert_norm}")
+
+    x_pert = x_pert.clamp(min=0, max=1)
     ##########################################################
 
     return x_pert.detach()

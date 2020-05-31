@@ -42,10 +42,21 @@ def train_model(model: nn.Module, dataset: Dataset, batch_size: int, loss_functi
     num_train_batches = int(torch.ceil(torch.tensor(len(dataset) / batch_size)).item())
     for epoch in range(epochs):
         train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-        for x,y in tqdm(iter(train_loader), total=num_train_batches):
+        for x, y in tqdm(train_loader, total=num_train_batches):
             ##########################################################
-            # YOUR CODE HERE
-            ...
+            # YOUR CODE HERE -- correct
+            # CPU only -- using if else here for cuda vs cpu is a waste
+            # x, y = x.to('cuda'), y.to('cuda')
+            optimizer.zero_grad()
+
+            loss, logits = loss_function(x, y, model)
+            losses.append(loss.item())
+
+            acc = (y == torch.argmax(logits, dim=-1)).float().mean()
+            accuracies.append(acc.item())
+
+            loss.backward()
+            optimizer.step()
             ##########################################################
     return losses, accuracies
 
@@ -78,10 +89,22 @@ def predict_model(model: nn.Module, dataset: Dataset, batch_size: int, attack_fu
     num_batches = int(torch.ceil(torch.tensor(len(dataset) / batch_size)).item())
     predictions = []
     targets = []
-    for x, y in tqdm(iter(test_loader), total=num_batches):
+    for x, y in tqdm(test_loader, total=num_batches):
         ##########################################################
         # YOUR CODE HERE
-        ...
+        # CPU only -- using if else here for cuda vs cpu is a waste
+        # x, y = x.to('cuda'), y.to('cuda')
+        x.requires_grad = True
+
+        logits = model(x)
+
+        if attack_function is not None:
+            x_perturbed = attack_function(logits, x, y, **attack_args)
+            logits = model(x_perturbed)
+
+        preds = torch.argmax(logits, dim=-1)
+        predictions.append(preds)
+        targets.append(y)
         ##########################################################
     predictions = torch.cat(predictions)
     targets = torch.cat(targets)
@@ -132,7 +155,7 @@ def evaluate_robustness_smoothing(base_classifier: nn.Module, sigma: float, data
     false_predictions = 0
     correct_certified = 0
     radii = []
-    for x, y in tqdm(iter(test_loader), total=len(dataset)):
+    for x, y in tqdm(test_loader, total=len(dataset)):
         ##########################################################
         # YOUR CODE HERE
         ...
