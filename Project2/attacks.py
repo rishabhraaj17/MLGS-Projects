@@ -43,7 +43,6 @@ def fast_gradient_attack(logits: torch.Tensor, x: torch.Tensor, y: torch.Tensor,
     # attack
     sign_x_grad = x_grad.sign()
 
-    # perturbed l2 acc is very high
     if norm == "1" or norm == "2":
         # Take Norm only over pixel dims
         x = x.view(b, -1)
