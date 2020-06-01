@@ -119,7 +119,10 @@ class SmoothClassifier(nn.Module):
 
         ##########################################################
         # YOUR CODE HERE
-        ...
+        class_counts = self._sample_noise_predictions(inputs, n0, batch_size).cpu()
+        top_class_count, top_class = class_counts.max()
+        p_A_lower_bound = lower_confidence_bound(num_class_A=top_class_count, num_samples=num_samples,
+                                                 alpha=alpha)
         ##########################################################
 
         if p_A_lower_bound < 0.5:
@@ -127,7 +130,7 @@ class SmoothClassifier(nn.Module):
         else:
             ##########################################################
             # YOUR CODE HERE
-            ...
+            radius = self.sigma * norm.ppf(p_A_lower_bound)
             ##########################################################
             return top_class, radius
 
@@ -158,7 +161,10 @@ class SmoothClassifier(nn.Module):
         class_counts = self._sample_noise_predictions(inputs, num_samples, batch_size).cpu()
         ##########################################################
         # YOUR CODE HERE
-        ...
+        winning_class_count, winning_class = class_counts.max()
+        winning_class = winning_class.item() if binom_test(winning_class_count.item(), num_samples, p=0.5) > alpha \
+            else -1
+        return winning_class
         ##########################################################
 
     def _sample_noise_predictions(self, inputs: torch.tensor, num_samples: int, batch_size: int) -> torch.Tensor:
@@ -190,7 +196,10 @@ class SmoothClassifier(nn.Module):
                 this_batch_size = min(num_remaining, batch_size)
                 ##########################################################
                 # YOUR CODE HERE
-                ...
+                batch_logits = self.forward(inputs.repeat_interleave(repeats=this_batch_size, dim=0))
+                batch_preds = batch_logits.argmax(dim=-1)
+                class_counts[batch_preds] += 1
+                num_remaining -= this_batch_size
                 ##########################################################
         return class_counts
 
