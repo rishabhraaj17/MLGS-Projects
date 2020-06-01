@@ -167,3 +167,4 @@ Project1/data/
 Project2/.DS_Store
 Project2/data/
 Project2/models/
+Project2/part_2_adversarial_training.py

@@ -44,12 +44,15 @@ def train_model(model: nn.Module, dataset: Dataset, batch_size: int, loss_functi
         train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
         for x, y in tqdm(train_loader, total=num_train_batches):
             ##########################################################
-            # YOUR CODE HERE -- correct
+            # YOUR CODE HERE
             # CPU only -- using if else here for cuda vs cpu is a waste
             # x, y = x.to('cuda'), y.to('cuda')
             optimizer.zero_grad()
 
-            loss, logits = loss_function(x, y, model)
+            if loss_args is not None:
+                loss, logits = loss_function(x, y, model, **loss_args)
+            else:
+                loss, logits = loss_function(x, y, model)
             losses.append(loss.item())
 
             acc = (y == torch.argmax(logits, dim=-1)).float().mean()
