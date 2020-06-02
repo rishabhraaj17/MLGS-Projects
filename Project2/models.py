@@ -15,16 +15,16 @@ class ConvNN(nn.Module):
     def __init__(self):
         super(ConvNN, self).__init__()
         self.sequential = nn.Sequential(
-                             nn.Conv2d(1, 5, 5),
-                             nn.ReLU(),
-                             nn.BatchNorm2d(5),
-                             nn.MaxPool2d(2),
-                             nn.Conv2d(5, 5, 5),
-                             nn.ReLU(),
-                             nn.MaxPool2d(2),
-                             nn.Flatten(),
-                             nn.Linear(80, 10),
-                            )
+            nn.Conv2d(1, 5, 5),
+            nn.ReLU(),
+            nn.BatchNorm2d(5),
+            nn.MaxPool2d(2),
+            nn.Conv2d(5, 5, 5),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Flatten(),
+            nn.Linear(80, 10),
+        )
 
     def forward(self, input):
         assert input.min() >= 0 and input.max() <= 1.
@@ -120,10 +120,11 @@ class SmoothClassifier(nn.Module):
         ##########################################################
         # YOUR CODE HERE
         class_counts = self._sample_noise_predictions(inputs, n0, batch_size).cpu()
-        top_class_count, top_class = class_counts.max(), class_counts.argmax().item()
+        top_class = class_counts.argmax().item()
 
-        # top class count is very less than num_samples .. never passes threshold ? -- fixme: use n0 instead?
-        # fixme -- top_class_count.item() times occured in n0 not in num_samples!
+        class_counts = self._sample_noise_predictions(inputs, num_samples, batch_size).cpu()
+        top_class_count = class_counts[top_class]
+
         p_A_lower_bound = lower_confidence_bound(num_class_A=top_class_count.item(), num_samples=num_samples,
                                                  alpha=alpha)
         ##########################################################
@@ -133,7 +134,6 @@ class SmoothClassifier(nn.Module):
         else:
             ##########################################################
             # YOUR CODE HERE
-            # fixme -- verify this aswell, radius is ||detla||2 .. do we need delta here?
             radius = self.sigma * norm.ppf(p_A_lower_bound)
             ##########################################################
             return top_class, radius
@@ -165,9 +165,11 @@ class SmoothClassifier(nn.Module):
         class_counts = self._sample_noise_predictions(inputs, num_samples, batch_size).cpu()
         ##########################################################
         # YOUR CODE HERE
-        winning_class_count, winning_class = class_counts.max(), class_counts.argmax()
-        winning_class = winning_class.item() if binom_test(winning_class_count.item(), num_samples, p=0.5) > alpha \
-            else -1
+        top2_winning_classes = class_counts.argsort(descending=True)[:2]
+        count1 = class_counts[top2_winning_classes[0]]
+        count2 = class_counts[top2_winning_classes[1]]
+        winning_class = top2_winning_classes[0].item()\
+            if binom_test(count1.item(), count1.item() + count2.item(), p=0.5) > alpha else -1
         return winning_class
         ##########################################################
 
