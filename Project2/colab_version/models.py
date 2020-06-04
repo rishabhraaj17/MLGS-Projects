@@ -119,13 +119,13 @@ class SmoothClassifier(nn.Module):
 
         ##########################################################
         # YOUR CODE HERE
-        class_counts = self._sample_noise_predictions(inputs, n0, batch_size).cpu()
+        class_counts = self._sample_noise_predictions(inputs, n0, batch_size).cuda()
         top_class = class_counts.argmax().item()
 
-        class_counts = self._sample_noise_predictions(inputs, num_samples, batch_size).cpu()
+        class_counts = self._sample_noise_predictions(inputs, num_samples, batch_size).cuda()
         top_class_count = class_counts[top_class]
 
-        p_A_lower_bound = lower_confidence_bound(num_class_A=top_class_count.item(), num_samples=num_samples,
+        p_A_lower_bound = lower_confidence_bound(num_class_A=top_class_count.cpu().item(), num_samples=num_samples,
                                                  alpha=alpha)
         ##########################################################
 
@@ -162,14 +162,14 @@ class SmoothClassifier(nn.Module):
         int: the winning class or -1 in case the desired confidence level could not be reached.
         """
         self.base_classifier.eval()
-        class_counts = self._sample_noise_predictions(inputs, num_samples, batch_size).cpu()
+        class_counts = self._sample_noise_predictions(inputs, num_samples, batch_size).cuda()
         ##########################################################
         # YOUR CODE HERE
         top2_winning_classes = class_counts.argsort(descending=True)[:2]
         count1 = class_counts[top2_winning_classes[0]]
         count2 = class_counts[top2_winning_classes[1]]
         winning_class = top2_winning_classes[0].item()\
-            if binom_test(count1.item(), count1.item() + count2.item(), p=0.5) > alpha else -1
+            if binom_test(count1.cpu().item(), count1.cpu().item() + count2.cpu().item(), p=0.5) > alpha else -1
         return winning_class
         ##########################################################
 

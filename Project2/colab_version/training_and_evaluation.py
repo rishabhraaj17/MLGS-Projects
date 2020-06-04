@@ -4,7 +4,7 @@ from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import Dataset, DataLoader
 from tqdm.autonotebook import tqdm
-from models import SmoothClassifier
+from mlgs.models import SmoothClassifier
 
 
 def train_model(model: nn.Module, dataset: Dataset, batch_size: int, loss_function: Callable, optimizer: Optimizer,
@@ -161,6 +161,7 @@ def evaluate_robustness_smoothing(base_classifier: nn.Module, sigma: float, data
     for x, y in tqdm(test_loader, total=len(dataset)):
         ##########################################################
         # YOUR CODE HERE
+        x, y = x.to('cuda'), y.to('cuda')
         top_class, radius = model.certify(inputs=x, n0=num_samples_1, num_samples=num_samples_2,
                                           alpha=alpha, batch_size=certification_batch_size)
         if top_class == SmoothClassifier.ABSTAIN:
