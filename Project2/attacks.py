@@ -49,10 +49,6 @@ def fast_gradient_attack(logits: torch.Tensor, x: torch.Tensor, y: torch.Tensor,
         x_grad = x_grad.view(b, -1)
         x_pert = x + epsilon * x_grad / torch.norm(x_grad, p=int(norm), dim=-1, keepdim=True)
         x_pert = x_pert.view(b, c, h, w)
-
-        # Can remove it
-        x = x.view(b, c, h, w)
-        x_grad = x_grad.view(b, c, h, w)
     else:
         x_pert = x + epsilon * sign_x_grad
 

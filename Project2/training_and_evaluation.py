@@ -51,6 +51,7 @@ def train_model(model: nn.Module, dataset: Dataset, batch_size: int, loss_functi
 
             if loss_args is not None:
                 loss, logits = loss_function(x, y, model, **loss_args)
+                loss = loss.mean()
             else:
                 loss, logits = loss_function(x, y, model)
             losses.append(loss.item())
